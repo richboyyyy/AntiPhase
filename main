@@ -1,0 +1,64 @@
+package com.example.antiphase;
+
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.plugin.java.JavaPlugin;
+
+public class AntiPhasePlugin extends JavaPlugin implements Listener {
+
+    @Override
+    public void onEnable() {
+        // Register event listener
+        Bukkit.getPluginManager().registerEvents(this, this);
+        getLogger().info("AntiPhasePlugin has been enabled!");
+    }
+
+    @Override
+    public void onDisable() {
+        getLogger().info("AntiPhasePlugin has been disabled!");
+    }
+
+    @EventHandler
+    public void onPlayerMove(PlayerMoveEvent event) {
+        Player player = event.getPlayer();
+        Location to = event.getTo();
+
+        if (to == null) return; // Safety check
+
+        // Check if the player is inside a solid block
+        if (to.getBlock().getType().isSolid()) {
+            // Attempt to move the player up until they are no longer inside a block
+            Location safeLocation = findSafeLocation(to);
+            if (safeLocation != null) {
+                player.teleport(safeLocation);
+                player.sendMessage("§aYou were pushed up because you were stuck in a block!");
+            }
+        }
+    }
+
+    /**
+     * Finds the nearest safe location above the current position.
+     * 
+     * @param location The starting location.
+     * @return A safe location, or null if none was found.
+     */
+    private Location findSafeLocation(Location location) {
+        Location current = location.clone();
+
+        // Move up to 256 blocks upwards to find a safe location
+        for (int i = 0; i < 256; i++) {
+            current.add(0, 1, 0);
+            if (!current.getBlock().getType().isSolid() && !current.clone().add(0, 1, 0).getBlock().getType().isSolid()) {
+                return current;
+            }
+        }
+
+        // Return null if no safe location is found
+        return null;
+    }
+}
